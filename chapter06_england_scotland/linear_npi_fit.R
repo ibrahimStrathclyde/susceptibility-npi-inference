@@ -26,7 +26,7 @@
 #          adapt_delta = 0.98, max_treedepth = 15.
 # Run time: roughly 30 to 45 minutes  depending on hardware.
 #
-# Authors: Ibrahim Mohammed, Chris Robertson
+# Authors: Ibrahim Mohammed, Chris Robertson, M. Gabriela M. Gomes
 # =============================================================================
 
 library(rstan)
@@ -84,7 +84,7 @@ create_custom_theme <- function(
 }
 
 # =========================================================
-# 0) Stan code — HIERARCHICAL LINEAR RAMP (HET)
+# 0) Stan code : HIERARCHICAL LINEAR RAMP (HET)
 # =========================================================
 stan_code_joint_lin_hier_het <- "
 functions {
@@ -242,7 +242,7 @@ model {
   mu_log_R0    ~ normal(log(3.0), 0.5);
   sigma_log_R0 ~ normal(0, 0.5);
 
-  // NOTE: prior for w is a modelling choice — adjust if you want it tighter/looser.
+  // NOTE: prior for w is a modelling choice  adjust if you want it tighter/looser.
   // This default is weakly-informative on a positive scale.
   mu_log_w     ~ normal(log(20.0), 1.0);
   sigma_log_w  ~ normal(0, 1.0);
@@ -314,8 +314,6 @@ generated quantities {
 
 writeLines(stan_code_joint_lin_hier_het, "outputs/stan_fits/seir_nb_joint_linear_hier_HET.stan")
 
-
-#writeLines(stan_code_joint_lin_hier_het, "seir_nb_joint_linear_hier_HET.stan")
 
 
 
@@ -578,7 +576,7 @@ write.csv(tab_country, "posterior_summaries_country_joint_linear_hier.csv", row.
 # 6) Choose model for plotting
 # =========================================================
 fit_use     <- fit_het_lin_hier
-model_label <- "Joint Linear ramp — Hierarchical — HET"
+model_label <- "Joint Linear model"
 include_CV  <- TRUE
 
 # include_CV  <- FALSE
@@ -624,8 +622,8 @@ p1_fitted <- ggplot(fitted_data, aes(x = Date)) +
   geom_point(aes(y = Observed, color = Country), size = 1, alpha = 0.7) +
   scale_color_manual(values = country_colors) +
   scale_fill_manual(values = country_colors) +
-  labs(title = paste0("Fitted vs Observed — ", model_label),
-       subtitle = "Points = observed, line = fitted median, ribbon = 95% NB2 predictive interval",
+  labs(title = paste0("Fitted vs Observed : ", model_label),
+      
        x = "Date", y = "Daily deaths") +
   create_custom_theme() +
   theme(legend.position = "bottom") +
@@ -657,8 +655,8 @@ p2a_resid_time <- ggplot(resid_data, aes(x = Date, y = Residual, color = Country
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   geom_smooth(method = "loess", se = TRUE, alpha = 0.2) +
   scale_color_manual(values = country_colors) +
-  labs(title = paste0("Residuals vs time — ", model_label),
-       subtitle = paste0("RMSE: EN=", round(rmse_EN,2), ", SC=", round(rmse_SC,2)),
+  labs(title = paste0("Residuals vs time: ", model_label),
+      
        x = "Date", y = "Residual") +
   create_custom_theme() +
   facet_wrap(~Country, scales = "free_y")
@@ -666,7 +664,7 @@ p2a_resid_time <- ggplot(resid_data, aes(x = Date, y = Residual, color = Country
 print(p2a_resid_time)
 
 # =========================================================
-# 9) Trace plots — use your direct array->df method
+# 9) Trace plots
 # =========================================================
 params_to_trace <- c(
   "R0[1]","R0[2]",
@@ -693,7 +691,7 @@ trace_df <- data.frame(
 
 p_trace <- ggplot(trace_df, aes(x = Iteration, y = Value, color = Chain)) +
   geom_line(alpha = 0.75, linewidth = 0.35) +
-  labs(title = paste0("Trace plots — ", model_label),
+  labs(title = paste0("Trace plots:", model_label),
        x = "Iteration", y = "Value") +
   create_custom_theme() +
   facet_wrap(~Parameter, scales = "free_y", ncol = 3)
@@ -731,8 +729,8 @@ meds <- post_dist %>% group_by(Parameter) %>% summarise(med = median(Value), .gr
 p_dens <- ggplot(post_dist, aes(x = Value)) +
   geom_density(fill = "steelblue", alpha = 0.35, linewidth = 0.6) +
   geom_vline(data = meds, aes(xintercept = med), linetype = "dashed", linewidth = 1) +
-  labs(title = paste0("Posterior densities — ", model_label),
-       subtitle = "Dashed = posterior median",
+  labs(title = paste0("Posterior densities : ", model_label),
+       
        x = "Value", y = "Density") +
   create_custom_theme() +
   facet_wrap(~Parameter, scales = "free", ncol = 3)
@@ -740,7 +738,7 @@ p_dens <- ggplot(post_dist, aes(x = Value)) +
 print(p_dens)
 
 # =========================================================
-# 11) Correlation heatmap — joint
+# 11) Correlation heatmap : joint
 # =========================================================
 key_mat <- cbind(
   R0_EN = R0_EN, R0_SC = R0_SC,
@@ -760,7 +758,7 @@ p_cor <- ggplot(cor_long, aes(x = Var1, y = Var2, fill = Correlation)) +
   geom_tile() +
   scale_fill_gradient2(midpoint = 0, limits = c(-1,1), name = "Corr") +
   geom_text(aes(label = round(Correlation, 2)), size = 3.3, fontface="bold") +
-  labs(title = paste0("Posterior correlation — ", model_label), x = "", y = "") +
+  labs(title = paste0("Posterior correlation ", model_label), x = "", y = "") +
   create_custom_theme() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -799,7 +797,7 @@ p_inc <- ggplot(inc_sum, aes(x = Date)) +
   geom_ribbon(aes(ymin = Lo, ymax = Hi), alpha = 0.3) +
   geom_line(aes(y = Med), linewidth = 1.1) +
   geom_vline(data = lines_df, aes(xintercept = line), inherit.aes = FALSE) +
-  labs(title = paste0("Simulated incidence — ", model_label),
+  labs(title = paste0("Simulated incidence: ", model_label),
        x = "Date", y = "delta * E(t)") +
   create_custom_theme() +
   facet_wrap(~Country, scales = "free_y", ncol = 1)
@@ -834,8 +832,8 @@ p_ct <- ggplot(ct_sum, aes(x = Date)) +
   geom_ribbon(aes(ymin = Lo, ymax = Hi), alpha = 0.3) +
   geom_line(aes(y = Med), linewidth = 1.1) +
   geom_vline(data = lines_df, aes(xintercept = line), inherit.aes = FALSE) +
-  labs(title = paste0("Simulated NPI profile (C_t) — ", model_label),
-       subtitle = "Line = median, ribbon = 95% pointwise interval, vertical = lockdown start",
+  labs(title = paste0("Simulated NPI profile (C_t) : ", model_label),
+       
        x = "Date", y = "C_t") +
   create_custom_theme() +
   facet_wrap(~Country, scales = "free_y", ncol = 1)
@@ -843,7 +841,7 @@ p_ct <- ggplot(ct_sum, aes(x = Date)) +
 print(p_ct)
 
 # =========================================================
-# OPTIONAL: compute Ct outside Stan (if you want a drop-in fun_get_ct analogue)
+# OPTIONAL: compute Ct outside Stan 
 # =========================================================
 fun_get_ct_linear <- function(post, stan_data) {
   # returns array: draws x C x T
