@@ -524,7 +524,7 @@ tab_pop <- bind_rows(lapply(names(pop_list), function(nm) {
 cat("\n== POPULATION-LEVEL POSTERIOR SUMMARIES (HIER LINEAR) ==\n")
 print(tab_pop %>% mutate(across(where(is.numeric), ~round(., 4))), n = Inf)
 
-write.csv(tab_pop, "posterior_summaries_pop_joint_linear_hier.csv", row.names = FALSE)
+#write.csv(tab_pop, "posterior_summaries_pop_joint_linear_hier.csv", row.names = FALSE)
 
 # -----------------------------
 # (B) Country-level table
@@ -569,7 +569,7 @@ tab_country <- bind_rows(lapply(1:2, function(c_idx) {
 cat("\n== COUNTRY-LEVEL POSTERIOR SUMMARIES (HIER LINEAR) ==\n")
 print(tab_country %>% mutate(across(where(is.numeric), ~round(., 4))), n = Inf)
 
-write.csv(tab_country, "posterior_summaries_country_joint_linear_hier.csv", row.names = FALSE)
+#write.csv(tab_country, "posterior_summaries_country_joint_linear_hier.csv", row.names = FALSE)
 
 
 # =========================================================
