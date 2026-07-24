@@ -8,9 +8,9 @@ University of Strathclyde, Glasgow
 
 ---
 
-> **Status:** Repository under active development. Code is being cleaned and
-> documented for reproducibility. All analysis scripts and shared functions are
-> present; see the [Status](#status) section for what remains outstanding.
+> **Status:** Repository complete. All analysis scripts have been cleaned,
+> documented, and tested for reproducibility. See the [Status](#status)
+> section for the full component checklist.
 
 ---
 
@@ -34,8 +34,8 @@ resolves this ridge.
 
 The empirical application fits the heterogeneous SEIR model under three NPI
 functional forms (piecewise-linear ramp, logistic, and stringency-index driven)
-to first-wave COVID-19 mortality data from England and Scotland using
-hierarchical Bayesian inference implemented in Stan.
+to first-wave COVID-19 mortality data from England and Scotland, using both
+hierarchical and uniform prior specifications.
 
 ---
 
@@ -51,23 +51,19 @@ susceptibility-npi-inference/
 |
 |- R/                                    # shared function libraries
 |   |- utility_functions.R              # ODE (Reduced.m_intervene), simulation,
-|   |                                   #   logit/expit  [used by Chs. 2-3]
-|   |- mle_functions.R                  # Poisson likelihoods, MLE fitters,
-|   |                                   #   profile likelihood, generate_trajectory
-|   |                                   #   [used by Chs. 2-3]
-|   `- Generalfun_mispec_distribution.R # LA-SM discretisation, heterogeneous
-|                                       #   ODE and likelihoods  [used by Ch. 5]
+|   |                                   #   logit/expit  [Chs. 2-3]
+|   |- mle_functions.R                  # Poisson likelihoods, MLE fitters (het and hom),
+|   |                                   #   profile likelihood, generate_trajectory  [Chs. 2-3, 5]
+|   `- Generalfun_mispec_distribution.R # LA-SM discretisation, K-group ODE,
+|                                       #   Gamma and Lognormal fitters  [Chs. 4-5]
 |
 |- chapter02_single_epidemic_identifiability/
 |   |- 01_baseline_cases.R              # Scenarios S3 (hom+NPI) and S4 (het+NPI):
-|   |                                   #   fits both models to heterogeneous data
-|   |                                   #   with NPIs. S1 and S2 (no NPI) are
-|   |                                   #   analytically trivial and omitted.
-|   |                                   #   [Ch. 2 main]
+|   |                                   #   fits both models to het data  [Ch. 2 main]
 |   |- Fitting_stochastic_tau_leap_reducedm.R  # MLE under tau-leaping stochastic
 |   |                                          #   simulation  [Ch. 2, Sec. 2.7]
 |   `- HELPERS_TAU_SIM.R               # tau-leaping simulator and ODE helpers;
-|                                      #   sourced by Fitting_stochastic_tau_leap_reducedm.R
+|                                      #   sourced by the fitting script above
 |
 |- chapter03_two_epidemic_inference/
 |   |- 02_mle_single_epidemic.R        # single-epidemic ODE MLE; establishes
@@ -75,11 +71,11 @@ susceptibility-npi-inference/
 |   `- 03_mle_two_epidemics.R          # two-epidemic joint MLE; resolves the
 |                                      #   nu-c* compensation ridge  [Ch. 3]
 |
-|- appendixC_supplementary/            # Appendix C: supplementary material for Chs. 2-3
-|   |- 04_single_epidemic_correlation.R  # parameter correlation across initial
-|   |                                    #   conditions, single epidemic
-|   `- 05_two_epidemics_correlation.R    # parameter correlation across initial
-|                                        #   conditions, two epidemics
+|- appendixC_supplementary/            # Appendix C: supplementary for Chs. 2-3
+|   |- 04_single_epidemic_correlation.R   # parameter correlation, single epidemic
+|   |- 05_two_epidemics_correlation.R     # parameter correlation, two epidemics
+|   `- 06_correlation_npi_comparison.R    # combined figure across NPI strengths;
+|                                         #   run after six correlation runs complete
 |
 |- chapter05_distributional_misspecification/
 |   |- single_epidemic_misspec.R       # Gamma vs Lognormal misspecification,
@@ -89,18 +85,26 @@ susceptibility-npi-inference/
 |
 |- chapter06_england_scotland/
 |   |- data/
-|   |   `- GB_data.csv                 # daily deaths and OxCGRT stringency index,
+|   |   `- GB_data.csv                 # daily deaths and OxCGRT stringency,
 |   |                                  #   England and Scotland,
 |   |                                  #   31 Jan 2020 to 01 Nov 2021 (640 obs.)
-|   |- linear_npi_fit.R                # joint hierarchical fit, piecewise-linear NPI
-|   |- logistic_npi_fit.R              # joint hierarchical fit, logistic NPI
-|   |- stringency_npi_fit.R            # joint hierarchical fit, stringency-index NPI
-|   `- compare_npi_specifications.R    # LOOIC comparison across the three NPI forms
+|   |
+|   |   --- Hierarchical priors (main analysis) ---
+|   |- linear_npi_fit.R                # piecewise-linear NPI, hierarchical priors
+|   |- logistic_npi_fit.R              # logistic NPI, hierarchical priors
+|   |- stringency_npi_fit.R            # stringency-index NPI, hierarchical priors
+|   |- compare_npi_specifications.R    # LOOIC comparison + diagnostics, hierarchical
+|   |
+|   |   --- Uniform priors (sensitivity analysis) ---
+|   |- linear_npi_fit_uniform.R        # piecewise-linear NPI, uniform priors
+|   |- logistic_npi_fit_uniform.R      # logistic NPI, uniform priors
+|   |- stringency_npi_fit_uniform.R    # stringency-index NPI, uniform priors
+|   `- compare_npi_specifications_uniform.R  # LOOIC comparison + diagnostics, uniform
 |
 `- outputs/                            # created at runtime; not tracked by git
     |- figures/
     |- results/
-    `- stan_fits/                      # Stan fit objects (.rds)
+    `- stan_fits/                      # Stan fit objects (.rds) and compiled models
 ```
 
 ---
@@ -119,21 +123,14 @@ susceptibility-npi-inference/
 | 7 | 6 | England and Scotland application |
 | 8 | 7 | General conclusions |
 
-**No code folder is provided for Chapters 1, 4, or 7.**
-Chapter 1 is theoretical. Chapter 4 (discretisation) is implemented inside
-`R/Generalfun_mispec_distribution.R` and has no standalone analysis script.
-Chapter 7 contains no new computation.
+No code folder is provided for Chapters 1, 4, or 7. Chapter 1 is theoretical.
+Chapter 4 (discretisation) is fully implemented inside
+`R/Generalfun_mispec_distribution.R`. Chapter 7 contains no new computation.
 
-**Tau-leaping study (Section 2.7).** The tau-leaping identifiability study
-was moved from submitted Appendix C into the main text as Chapter 2,
-Section 2.7. Its scripts (`Fitting_stochastic_tau_leap_reducedm.R` and
-`HELPERS_TAU_SIM.R`) are therefore in
-`chapter02_single_epidemic_identifiability/`. `HELPERS_TAU_SIM.R` is a
-self-contained helper sourced by the fitting script; it carries its own ODE
-and does not depend on `R/utility_functions.R`.
-
-**Revised Appendix C** holds supplementary parameter-correlation material for
-Chapters 2 and 3. Those scripts are in `appendixC_supplementary/`.
+The tau-leaping study was moved from submitted Appendix C into the main text
+as Chapter 2, Section 2.7. Its scripts are therefore in
+`chapter02_single_epidemic_identifiability/`. Revised Appendix C holds
+parameter-correlation supplementary material for Chapters 2 and 3.
 
 ---
 
@@ -153,17 +150,17 @@ source("install_packages.R")
 
 ### 2. Working directory
 
-Set your working directory to the repository root before sourcing any script,
-or open the repository as an RStudio project. All `source()` paths in the
-chapter scripts are relative to the repository root.
+Set your working directory to the repository root, or open the repository as
+an RStudio project. All `source()` and file paths in the scripts are relative
+to the repository root.
 
-### 3. Chapter-by-chapter reproduction
+### 3. Source order for Chapters 2 and 3
 
-Scripts in Chapters 2 and 3 begin with:
+Every Chapter 2 and 3 analysis script begins with:
 
 ```r
-source("R/utility_functions.R")   # ODE, simulation
-source("R/mle_functions.R")       # MLE, profile likelihood
+source("R/utility_functions.R")   # ODE, simulation, logit/expit
+source("R/mle_functions.R")       # MLE fitters and profile likelihood
 ```
 
 Chapter 5 scripts begin with:
@@ -172,12 +169,15 @@ Chapter 5 scripts begin with:
 source("R/Generalfun_mispec_distribution.R")  # LA-SM discretisation
 ```
 
-The tau-leaping scripts are self-contained and source only `HELPERS_TAU_SIM.R`.
+The tau-leaping scripts are self-contained and source only
+`HELPERS_TAU_SIM.R` from the same directory.
+
+### 4. Chapter-by-chapter
 
 #### Chapter 2: Single-epidemic identifiability
 
 ```r
-# Scenarios S3 (hom+NPI) and S4 (het+NPI) fitted to heterogeneous data
+# Scenarios S3 (hom+NPI) and S4 (het+NPI) fitted to het data
 source("chapter02_single_epidemic_identifiability/01_baseline_cases.R")
 
 # Section 2.7: tau-leaping stochastic identifiability study
@@ -185,51 +185,53 @@ source("chapter02_single_epidemic_identifiability/Fitting_stochastic_tau_leap_re
 ```
 
 `01_baseline_cases.R` generates the S3 and S4 fitting and prediction plots.
-S1 (hom, no NPI) and S2 (het, no NPI) are analytically trivial and are not
-included as separate scripts. `Fitting_stochastic_tau_leap_reducedm.R`
-reproduces the stochastic simulation study in Section 2.7; its helper file
-`HELPERS_TAU_SIM.R` must be in the same directory.
+Scenarios S1 and S2 (no NPI) are analytically trivial and omitted.
 
 #### Chapter 3: Two-epidemic inference
 
-Run scripts in order: the single-epidemic script provides the identifiability
-comparator.
+Run the single-epidemic script first; it writes a CSV that the two-epidemic
+script reads for the interval-width comparison.
 
 ```r
 source("chapter03_two_epidemic_inference/02_mle_single_epidemic.R")
 source("chapter03_two_epidemic_inference/03_mle_two_epidemics.R")
 ```
 
-`02_mle_single_epidemic.R` demonstrates the nu-c* ridge on a single epidemic.
-`03_mle_two_epidemics.R` shows how joint fitting across two epidemics with
-different initial conditions resolves the ridge.
+#### Appendix C: Parameter correlation
 
-#### Appendix C: Parameter correlation supplementary material
+Both correlation scripts must each be run **three times**, changing
+`c_value2_spec` to `0.2`, `0.3`, and `0.4` in turn. Only after all six runs
+are complete does the comparison script produce output.
 
 ```r
+# Run each three times with c_value2_spec = 0.2, then 0.3, then 0.4
 source("appendixC_supplementary/04_single_epidemic_correlation.R")
 source("appendixC_supplementary/05_two_epidemics_correlation.R")
+
+# Once all six runs are done
+source("appendixC_supplementary/06_correlation_npi_comparison.R")
 ```
 
-Both scripts loop over a grid of I0 values and are computationally intensive.
-Set `n_replicates` at the top of each script to a smaller value (e.g. 20)
-for a quick verification run.
+`06_correlation_npi_comparison.R` checks for the six result folders and
+stops with a readable message naming any that are missing.
 
 #### Chapter 5: Distributional misspecification
+
+Both scripts have a `SIMULATE_WITH` switch near the top. Set it to `"gamma"`
+or `"lognormal"` and run each script once per setting.
 
 ```r
 source("chapter05_distributional_misspecification/single_epidemic_misspec.R")
 source("chapter05_distributional_misspecification/two_epidemics_misspec.R")
 ```
 
-Both use K = 100 discretisation groups and n_replicates = 200 by default.
-The random seed is fixed at 20251217.
-
 #### Chapter 6: England and Scotland application
 
-Stan models are compiled on first run and cached automatically.
-Each fitting script saves its Stan fit object to `outputs/stan_fits/`.
-Run the three fitting scripts before the comparison script.
+Stan models compile on first run and are cached automatically. Each fitting
+script saves its fit object to `outputs/stan_fits/`. Run the three fitting
+scripts before the comparison script.
+
+**Hierarchical priors (main analysis):**
 
 ```r
 source("chapter06_england_scotland/linear_npi_fit.R")
@@ -238,10 +240,36 @@ source("chapter06_england_scotland/stringency_npi_fit.R")
 source("chapter06_england_scotland/compare_npi_specifications.R")
 ```
 
-Stan runs use `adapt_delta = 0.95` to `0.98` and `max_treedepth = 12` to `15`
-depending on the NPI specification. Running all three fits at the default
-settings requires several hours on a multi-core machine.
-`options(mc.cores = parallel::detectCores())` is set at the top of each script.
+**Uniform priors (sensitivity analysis):**
+
+```r
+source("chapter06_england_scotland/linear_npi_fit_uniform.R")
+source("chapter06_england_scotland/logistic_npi_fit_uniform.R")
+source("chapter06_england_scotland/stringency_npi_fit_uniform.R")
+source("chapter06_england_scotland/compare_npi_specifications_uniform.R")
+```
+
+The comparison scripts can load fits from `outputs/stan_fits/` so they run
+in a fresh session without the fitting objects in memory.
+
+Stan sampler settings across all Chapter 6 scripts: 4 chains, 2500 iterations,
+1250 warmup, `adapt_delta = 0.98`, `max_treedepth = 15`. Each fit takes
+roughly 1 to 4 hours on a multi-core machine.
+
+---
+
+## Fit object names
+
+| Script | Object in R | RDS file |
+|--------|-------------|----------|
+| `linear_npi_fit.R` | `fit_het_lin_hier` | `outputs/stan_fits/fit_het_lin_hier.rds` |
+| `logistic_npi_fit.R` | `fit_het_log_hier` | `outputs/stan_fits/fit_het_log_hier.rds` |
+| `stringency_npi_fit.R` | `fit_het_str_hier` | `outputs/stan_fits/fit_het_str_hier.rds` |
+| `linear_npi_fit_uniform.R` | `fit_het_lin_unif` | `outputs/stan_fits/fit_het_lin_unif.rds` |
+| `logistic_npi_fit_uniform.R` | `fit_het_log_unif` | `outputs/stan_fits/fit_het_log_unif.rds` |
+| `stringency_npi_fit_uniform.R` | `fit_het_str_unif` | `outputs/stan_fits/fit_het_str_unif.rds` |
+
+The `_hier` and `_unif` objects can coexist in a single R session.
 
 ---
 
@@ -274,8 +302,8 @@ Tracker (Hale et al., 2021, *Nature Human Behaviour*).
 | nu (v) | Susceptibility coefficient of variation | estimated |
 | c* (c_value2) | NPI contact-reduction factor | estimated |
 | t0 | NPI onset time | estimated |
-| delta | Incubation rate (1/mean exposed time) | 1/5.5 per day |
-| gamma | Recovery rate (1/mean infectious time) | 1/4 per day |
+| delta | Incubation rate (1/mean exposed period) | 1/5.5 per day |
+| gamma | Recovery rate (1/mean infectious period) | 1/4 per day |
 | rho | Relative infectiousness of E class | 0.5 |
 | K | Gamma discretisation groups | 30 (Chs. 2-3), 100 (Ch. 5), 20 (Ch. 6) |
 
@@ -315,17 +343,25 @@ cite the original sources if you use the data independently.
 | Component | State |
 |-----------|-------|
 | `R/utility_functions.R` | Complete |
-| `R/mle_functions.R` (merged, het only) | Complete |
+| `R/mle_functions.R` | Complete |
 | `R/Generalfun_mispec_distribution.R` | Complete |
-| `chapter02`: `01_baseline_cases.R` (S3, S4) | Complete |
-| `chapter02`: `Fitting_stochastic_tau_leap_reducedm.R` + `HELPERS_TAU_SIM.R` | Complete |
-| `chapter03`: `02_mle_single_epidemic.R` | Complete |
-| `chapter03`: `03_mle_two_epidemics.R` | Complete |
-| `appendixC`: `04_single_epidemic_correlation.R` | Complete |
-| `appendixC`: `05_two_epidemics_correlation.R` | Complete |
-| `chapter05`: misspecification scripts (het only) | Complete |
-| `chapter06`: Stan fitting scripts (het only) | In progress |
-| `chapter06`: `compare_npi_specifications.R` | Complete |
+| `chapter02/01_baseline_cases.R` (S3, S4) | Complete |
+| `chapter02/Fitting_stochastic_tau_leap_reducedm.R` | Complete |
+| `chapter02/HELPERS_TAU_SIM.R` | Complete |
+| `chapter03/02_mle_single_epidemic.R` | Complete |
+| `chapter03/03_mle_two_epidemics.R` | Complete |
+| `appendixC/04_single_epidemic_correlation.R` | Complete |
+| `appendixC/05_two_epidemics_correlation.R` | Complete |
+| `appendixC/06_correlation_npi_comparison.R` | Complete |
+| `chapter05/single_epidemic_misspec.R` | Complete |
+| `chapter05/two_epidemics_misspec.R` | Complete |
 | `chapter06/data/GB_data.csv` | Complete |
+| `chapter06/linear_npi_fit.R` (hierarchical) | Complete |
+| `chapter06/logistic_npi_fit.R` (hierarchical) | Complete |
+| `chapter06/stringency_npi_fit.R` (hierarchical) | Complete |
+| `chapter06/compare_npi_specifications.R` | Complete |
+| `chapter06/linear_npi_fit_uniform.R` | Complete |
+| `chapter06/logistic_npi_fit_uniform.R` | Complete |
+| `chapter06/stringency_npi_fit_uniform.R` | Complete |
+| `chapter06/compare_npi_specifications_uniform.R` | Complete |
 | End-to-end test on clean R installation | Pending |
-
