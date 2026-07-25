@@ -364,4 +364,3 @@ cite the original sources if you use the data independently.
 | `chapter06/logistic_npi_fit_uniform.R` | Complete |
 | `chapter06/stringency_npi_fit_uniform.R` | Complete |
 | `chapter06/compare_npi_specifications_uniform.R` | Complete |
-| End-to-end test on clean R installation | Pending |
