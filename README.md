@@ -93,13 +93,13 @@ susceptibility-npi-inference/
 |   |- linear_npi_fit.R                # piecewise-linear NPI, hierarchical priors
 |   |- logistic_npi_fit.R              # logistic NPI, hierarchical priors
 |   |- stringency_npi_fit.R            # stringency-index NPI, hierarchical priors
-|   |- compare_npi_specifications.R    # LOOIC comparison + diagnostics, hierarchical
+|   |- compare_npi_specifications.R    #  diagnostics, hierarchical
 |   |
 |   |   --- Uniform priors (sensitivity analysis) ---
 |   |- linear_npi_fit_uniform.R        # piecewise-linear NPI, uniform priors
 |   |- logistic_npi_fit_uniform.R      # logistic NPI, uniform priors
 |   |- stringency_npi_fit_uniform.R    # stringency-index NPI, uniform priors
-|   `- compare_npi_specifications_uniform.R  # LOOIC comparison + diagnostics, uniform
+|   `- compare_npi_specifications_uniform.R  #  diagnostics, uniform
 |
 `- outputs/                            # created at runtime; not tracked by git
     |- figures/
@@ -127,9 +127,8 @@ No code folder is provided for Chapters 1, 4, or 7. Chapter 1 is theoretical.
 Chapter 4 (discretisation) is fully implemented inside
 `R/Generalfun_mispec_distribution.R`. Chapter 7 contains no new computation.
 
-The tau-leaping study was moved from submitted Appendix C into the main text
-as Chapter 2, Section 2.7. Its scripts are therefore in
-`chapter02_single_epidemic_identifiability/`. Revised Appendix C holds
+
+`chapter02_single_epidemic_identifiability/`. Appendix C holds
 parameter-correlation supplementary material for Chapters 2 and 3.
 
 ---
