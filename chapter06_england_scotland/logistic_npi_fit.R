@@ -286,7 +286,7 @@ writeLines(stan_code_joint_log_het, "outputs/stan_fits/seir_nb_joint_logistic_un
 # Joint hierarchical pooling (England+Scotland)
 # Logistic NPI
 # Heterogeneous susceptibility (CV estimated)
-# LOO/WAIC + thesis-style diagnostics
+
 # ============================================================
 
 library(rstan)
@@ -561,28 +561,16 @@ tab_cty <- tibble::tibble(
   )
 )
 
-cat("\n== POPULATION (medians + 95% CrI) ==\n")
+
 print(tab_pop %>% dplyr::mutate(dplyr::across(where(is.numeric), ~round(., 4))))
 
-cat("\n== COUNTRY-SPECIFIC (medians + 95% CrI) ==\n")
 print(tab_cty %>% dplyr::mutate(dplyr::across(where(is.numeric), ~round(., 4))))
-
-
-
-
-
-
 
 cat("\n== POPULATION (hierarchical centers) ==\n")
 print(tab_pop %>% mutate(across(where(is.numeric), ~round(., 4))))
 
 cat("\n== COUNTRY-SPECIFIC ==\n")
 print(tab_cty %>% mutate(across(where(is.numeric), ~round(., 4))))
-
-
-
-
-
 
 # -----------------------
 # Fitted trajectories + NB predictive bands
@@ -703,7 +691,7 @@ print(p_trace)
 
 
 
-# --- Trace plots (key parameters) ---
+# --- Trace plots ------
 params_to_trace <- c("R0[1]","R0[2]","k[1]","k[2]","tm[1]","tm[2]","cstar[1]","cstar[2]","phi[1]","phi[2]")
 if (include_CV) params_to_trace <- c(params_to_trace, "CV_shared")
 
