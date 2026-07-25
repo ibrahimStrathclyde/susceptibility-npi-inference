@@ -1,4 +1,3 @@
-
 # =============================================================================
 # compare_npi_specifications.R
 #
@@ -16,11 +15,11 @@
 #
 # Produces:
 #   Fitted vs observed (combined and per country)
-#   Residuals vs time 
-#   Reconstructed incidence overlay
-#   Contact modifier c(t) overlay
-#   Stacked two-panel figures per country
+#   Residuals vs time
 #  
+#   Contact modifier c(t) 
+#   Stacked two-panel figures per country
+#   
 #   Posterior summary table across all three models
 #
 # All outputs go to outputs/figures/ and outputs/results/.
@@ -120,24 +119,24 @@ for (obj_name in names(fit_files)) {
 # ============================================================
 # 1) Data prep (stringency default)
 # ============================================================
-prepare_joint_data <- function(filepath = "GB_data.csv") {
+prepare_joint_data <- function(filepath = "chapter06_england_scotland/data/GB_data.csv") {
   data <- read.csv(filepath, stringsAsFactors = FALSE)
   data$Date <- lubridate::dmy(data$Date)
   data <- data[order(data$Date), ]
-  
+
   analysis_start <- as.Date("2020-01-31")
   analysis_end   <- as.Date("2020-06-01")
   idx <- which(data$Date >= analysis_start & data$Date <= analysis_end)
-  
+
   dates <- data$Date[idx]
-  
+
   deaths_EN <- data$Deaths_EN[idx]; deaths_EN[is.na(deaths_EN)] <- 0L
   deaths_SC <- data$Deaths_SC[idx]; deaths_SC[is.na(deaths_SC)] <- 0L
-  
+
   str_EN <- data$Stringency_EN[idx]; str_SC <- data$Stringency_SC[idx]
   str_EN[is.na(str_EN)] <- 0
   str_SC[is.na(str_SC)] <- 0
-  
+
   norm_flip <- function(x) {
     xmin <- min(x, na.rm = TRUE)
     xmax <- max(x, na.rm = TRUE)
@@ -146,20 +145,20 @@ prepare_joint_data <- function(filepath = "GB_data.csv") {
     u <- 1 - r
     pmin(pmax(u, 0), 1)
   }
-  
+
   u_EN <- norm_flip(str_EN)
   u_SC <- norm_flip(str_SC)
-  
+
   lockdown_start_EN <- as.Date("2020-03-26")
   lockdown_end_EN   <- as.Date("2020-05-12")
   lockdown_start_SC <- as.Date("2020-03-24")
   lockdown_end_SC   <- as.Date("2020-05-28")
-  
+
   t1_EN <- which.min(abs(dates - lockdown_start_EN))
   t2_EN <- which.min(abs(dates - lockdown_end_EN))
   t1_SC <- which.min(abs(dates - lockdown_start_SC))
   t2_SC <- which.min(abs(dates - lockdown_end_SC))
-  
+
   list(
     england = list(
       deaths = as.integer(deaths_EN),
@@ -182,7 +181,7 @@ prepare_joint_data <- function(filepath = "GB_data.csv") {
   )
 }
 
-joint_data <- prepare_joint_data("GB_data.csv")
+joint_data <- prepare_joint_data("chapter06_england_scotland/data/GB_data.csv")
 dates <- joint_data$england$dates
 n_days <- length(dates)
 
@@ -223,7 +222,7 @@ summarise_draw_array <- function(arr_draw_C_T, dates, model_name,
   stopifnot(length(dim(arr_draw_C_T)) == 3)
   stopifnot(dim(arr_draw_C_T)[2] == 2)
   stopifnot(dim(arr_draw_C_T)[3] == length(dates))
-  
+
   out <- vector("list", 2)
   for (c in 1:2) {
     mat <- arr_draw_C_T[, c, , drop = TRUE]
@@ -242,21 +241,21 @@ summarise_draw_array <- function(arr_draw_C_T, dates, model_name,
 
 ct_from_fit <- function(fit, model_type, dates, u_mat = NULL, t1_idx = NULL) {
   post <- rstan::extract(fit)
-  
+
   if (!is.null(post$ct) && length(dim(post$ct)) == 3) return(post$ct)
-  
+
   if (model_type == "stringency") {
     if (is.null(u_mat)) stop("ct reconstruction needs u_mat for stringency.")
     if (is.null(post$cstar)) stop("ct reconstruction needs cstar for stringency.")
-    
+
     cstar <- post$cstar
     if (is.null(dim(cstar))) cstar <- cbind(cstar, cstar)
     if (ncol(cstar) == 1) cstar <- cbind(cstar, cstar)
-    
+
     n_draw <- nrow(cstar)
     C <- 2
     T <- ncol(u_mat)
-    
+
     ct <- array(NA_real_, dim = c(n_draw, C, T))
     for (c in 1:C) {
       for (t in 1:T) {
@@ -265,11 +264,11 @@ ct_from_fit <- function(fit, model_type, dates, u_mat = NULL, t1_idx = NULL) {
     }
     return(ct)
   }
-  
+
   if (model_type == "logistic") {
     need <- c("cstar", "tm", "k")
     if (!all(need %in% names(post))) stop("ct reconstruction needs: ", paste(need, collapse=", "))
-    
+
     cstar <- post$cstar; tm <- post$tm; k <- post$k
     if (is.null(dim(cstar))) cstar <- cbind(cstar, cstar)
     if (is.null(dim(tm)))    tm    <- cbind(tm, tm)
@@ -277,11 +276,11 @@ ct_from_fit <- function(fit, model_type, dates, u_mat = NULL, t1_idx = NULL) {
     if (ncol(cstar) == 1) cstar <- cbind(cstar, cstar)
     if (ncol(tm) == 1)    tm    <- cbind(tm, tm)
     if (ncol(k) == 1)     k     <- cbind(k, k)
-    
+
     n_draw <- nrow(cstar)
     C <- 2
     T <- length(dates)
-    
+
     ct <- array(NA_real_, dim = c(n_draw, C, T))
     for (c in 1:C) {
       for (t in 1:T) {
@@ -291,14 +290,14 @@ ct_from_fit <- function(fit, model_type, dates, u_mat = NULL, t1_idx = NULL) {
     }
     return(ct)
   }
-  
+
   if (model_type == "linear") {
     if (is.null(post$cstar)) stop("ct reconstruction needs cstar for linear.")
     if (is.null(t1_idx)) stop("ct reconstruction needs t1_idx for linear.")
     cstar <- post$cstar
     if (is.null(dim(cstar))) cstar <- cbind(cstar, cstar)
     if (ncol(cstar) == 1) cstar <- cbind(cstar, cstar)
-    
+
     if (!is.null(post$t0)) {
       t0 <- post$t0
       if (is.null(dim(t0))) t0 <- cbind(t0, t0)
@@ -311,11 +310,11 @@ ct_from_fit <- function(fit, model_type, dates, u_mat = NULL, t1_idx = NULL) {
     } else {
       stop("ct reconstruction for linear needs t0 or w in posterior.")
     }
-    
+
     n_draw <- nrow(cstar)
     C <- 2
     T <- length(dates)
-    
+
     ct <- array(NA_real_, dim = c(n_draw, C, T))
     for (c in 1:C) {
       t1c <- t1_idx[c]
@@ -332,7 +331,7 @@ ct_from_fit <- function(fit, model_type, dates, u_mat = NULL, t1_idx = NULL) {
     }
     return(ct)
   }
-  
+
   stop("Unknown model_type: ", model_type)
 }
 
@@ -340,16 +339,16 @@ peak_prob_tbl <- function(inc_draws, model_name, dates, lock_EN, lock_SC) {
   stopifnot(length(dim(inc_draws)) == 3)
   stopifnot(dim(inc_draws)[2] == 2)
   stopifnot(dim(inc_draws)[3] == length(dates))
-  
+
   one_country <- function(mat_draw_T, lockdown_date) {
     peak_idx  <- apply(mat_draw_T, 1, which.max)
     peak_date <- dates[peak_idx]
-    
+
     q_date <- function(p) as.Date(
       stats::quantile(as.numeric(peak_date), p),
       origin = "1970-01-01"
     )
-    
+
     tibble::tibble(
       peak_median = as.Date(stats::median(as.numeric(peak_date)), origin = "1970-01-01"),
       peak_q025   = q_date(0.025),
@@ -359,7 +358,7 @@ peak_prob_tbl <- function(inc_draws, model_name, dates, lock_EN, lock_SC) {
       p_after     = mean(peak_date > lockdown_date)
     )
   }
-  
+
   dplyr::bind_rows(
     one_country(inc_draws[, 1, ], lock_EN) %>% dplyr::mutate(Model = model_name, Country = "England"),
     one_country(inc_draws[, 2, ], lock_SC) %>% dplyr::mutate(Model = model_name, Country = "Scotland")
@@ -368,7 +367,7 @@ peak_prob_tbl <- function(inc_draws, model_name, dates, lock_EN, lock_SC) {
 }
 
 # ============================================================
-#  Model registry
+# 3) Model registry
 # ============================================================
 models <- list(
   list(name = "Linear",     type = "linear",     fit = fit_het_lin_hier),
@@ -379,26 +378,26 @@ models <- list(
 npi_cols <- c("Linear" = "#F8766D", "Logistic" = "#00BA38", "Stringency" = "#619CFF")
 
 # ============================================================
-#  FITTED vs OBSERVED (combined)
+# 4) FITTED vs OBSERVED 
 # ============================================================
 fitted_all <- dplyr::bind_rows(lapply(models, function(m) {
   post <- rstan::extract(m$fit)
-  
+
   if (is.null(post$mu)) stop("Missing mu in fit: ", m$name)
   mu <- post$mu
-  
+
   mu_EN_med <- apply(mu[, 1, ], 2, stats::median)
   mu_SC_med <- apply(mu[, 2, ], 2, stats::median)
-  
+
   phi_med <- phi_median_by_country(post)
   if (anyNA(phi_med)) stop("Missing phi in fit: ", m$name)
-  
+
   band_EN_lo <- stats::qnbinom(0.025, size = phi_med[1], mu = mu_EN_med)
   band_EN_hi <- stats::qnbinom(0.975, size = phi_med[1], mu = mu_EN_med)
-  
+
   band_SC_lo <- stats::qnbinom(0.025, size = phi_med[2], mu = mu_SC_med)
   band_SC_hi <- stats::qnbinom(0.975, size = phi_med[2], mu = mu_SC_med)
-  
+
   tibble::tibble(
     Date    = rep(dates, 2),
     Country = rep(c("England", "Scotland"), each = n_days),
@@ -442,10 +441,10 @@ ggplot2::ggsave(
 )
 
 plot_one_country <- function(ctry, lock_date, file_name) {
-  
+
   fitted_cty <- fitted_all %>% dplyr::filter(Country == ctry)
   obs_cty    <- obs_df    %>% dplyr::filter(Country == ctry)
-  
+
   p <- ggplot2::ggplot() +
     ggplot2::geom_ribbon(
       data = fitted_cty,
@@ -470,10 +469,10 @@ plot_one_country <- function(ctry, lock_date, file_name) {
       x = "Date", y = "Daily deaths", colour = "Model", fill = "Model"
     ) +
     create_custom_theme(legend_position = "bottom")
-  
+
   print(p)
   ggplot2::ggsave(file.path(fig_dir, file_name), p, width = 10, height = 4.5, dpi = 300)
-  
+
   invisible(p)
 }
 
@@ -490,7 +489,7 @@ plot_one_country(
 )
 
 # ============================================================
-#  Residuals: vs time and vs fitted (with RMSE subtitles)
+# 5) Residuals: vs time  
 # ============================================================
 resid_all <- fitted_all %>%
   dplyr::left_join(obs_df, by = c("Date", "Country")) %>%
@@ -505,12 +504,7 @@ rmse_tbl <- resid_all %>%
     .groups = "drop"
   )
 
-rmse_sub <- rmse_tbl %>%
-  dplyr::mutate(txt = paste0(Model, "=", sprintf("%.2f", RMSE))) %>%
-  dplyr::group_by(Country) %>%
-  dplyr::summarise(line = paste(txt, collapse = ", "), .groups = "drop") %>%
-  dplyr::summarise(sub = paste0(Country, ": ", line, collapse = " | "), .groups = "drop") %>%
-  dplyr::pull(sub)
+
 
 p_res_time <- ggplot2::ggplot(resid_all, ggplot2::aes(x = Date, y = Residual, colour = Model)) +
   ggplot2::geom_point(alpha = 0.55, size = 1) +
@@ -519,55 +513,57 @@ p_res_time <- ggplot2::ggplot(resid_all, ggplot2::aes(x = Date, y = Residual, co
   ggplot2::geom_vline(data = lines_df, ggplot2::aes(xintercept = Lock), linewidth = 0.5) +
   ggplot2::scale_colour_manual(values = npi_cols) +
   ggplot2::labs(
-    title = "Residuals vs time - joint hierarchical models",
-    subtitle = rmse_sub,
+    title = "Residuals vs time - joint hierarchical models",   
     x = "Date", y = "Observed - fitted", colour = "Model"
   ) +
   create_custom_theme(legend_position = "bottom") +
   ggplot2::facet_wrap(~Country, scales = "free_y")
 
 
-ggplot2::ggsave(file.path(fig_dir, "compare3_residuals_vs_time.png"),
-                p_res_time, width = 10, height = 6, dpi = 300)
+print(p_res_time)
 
-write.csv(rmse_tbl, file.path(res_dir, "compare3_rmse.csv"), row.names = FALSE)
 
 # ============================================================
-# 6) Incidence : inc_EI (delta * E)
+#  Contact modifier overlay: c(t)
 # ============================================================
-inc_all <- dplyr::bind_rows(lapply(models, function(m) {
-  post <- rstan::extract(m$fit, pars = "inc_EI")
-  if (is.null(post$inc_EI)) stop("Missing inc_EI in fit: ", m$name)
-  summarise_draw_array(post$inc_EI, dates, model_name = m$name, value_name = "Inc")
+ct_all <- dplyr::bind_rows(lapply(models, function(m) {
+  ct_arr <- ct_from_fit(m$fit, m$type, dates = dates, u_mat = u_mat, t1_idx = t1_idx)
+  summarise_draw_array(ct_arr, dates, model_name = m$name, value_name = "Ct")
 }))
 
-p_inc_compare <- ggplot2::ggplot(inc_all,
-                                 ggplot2::aes(x = Date, y = Inc, colour = Model, fill = Model)) +
+p_ct_compare <- ggplot2::ggplot(ct_all,
+                                ggplot2::aes(x = Date, y = Ct, colour = Model, fill = Model)) +
   ggplot2::geom_ribbon(ggplot2::aes(ymin = Lo, ymax = Hi), alpha = 0.15, colour = NA) +
   ggplot2::geom_line(linewidth = 1.1) +
   ggplot2::geom_vline(data = lines_df, ggplot2::aes(xintercept = Lock), linewidth = 0.5) +
   ggplot2::scale_colour_manual(values = npi_cols) +
   ggplot2::scale_fill_manual(values = npi_cols) +
   ggplot2::labs(
-    title = "Reconstructed incidence - joint hierarchical models",
+    title = "Contact modifier c(t) - joint hierarchical models",
     subtitle = "Lines = posterior medians; ribbons = 95% pointwise intervals; vertical = lockdown date",
-    x = "Date", y = "Reconstructed incidence", colour = "Model", fill = "Model"
+    x = "Date", y = "c(t)", colour = "Model", fill = "Model"
   ) +
   create_custom_theme(legend_position = "bottom") +
-  ggplot2::facet_wrap(~Country, scales = "free_y", ncol = 1)
+  ggplot2::facet_wrap(~Country, scales = "fixed", ncol = 1) +
+  ggplot2::coord_cartesian(ylim = c(0, 1.05))
 
-print(p_inc_compare)
-ggplot2::ggsave(file.path(fig_dir, "compare3_incidence_EI.png"),
-                p_inc_compare, width = 10, height = 7, dpi = 300)
+print(p_ct_compare)
+ggplot2::ggsave(file.path(fig_dir, "compare3_ct.png"),
+                p_ct_compare, width = 10, height = 7, dpi = 300)
+
+
+# ============================================================
+# Stacked panels per country
+# ============================================================
 
 
 # ---  fitted over c(t) ---
-create_stacked_fit_ct <- function(country, file_stub) {
+plot_stacked_fit_ct <- function(country, file_stub) {
   fit_c  <- fitted_all %>% dplyr::filter(Country == country)
   obs_c  <- obs_df     %>% dplyr::filter(Country == country)
   ct_c   <- ct_all     %>% dplyr::filter(Country == country)
   line_c <- lines_df   %>% dplyr::filter(Country == country)
-  
+
   p_fit <- ggplot() +
     geom_ribbon(data = fit_c, aes(x = Date, ymin = Lower, ymax = Upper, fill = Model),
                 alpha = 0.15, colour = NA) +
@@ -580,7 +576,7 @@ create_stacked_fit_ct <- function(country, file_stub) {
          x = NULL, y = "Daily deaths", colour = "Model", fill = "Model") +
     create_custom_theme(legend_position = "bottom") +
     theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  
+
   p_ct <- ggplot(ct_c, aes(x = Date, y = Ct, colour = Model, fill = Model)) +
     geom_ribbon(aes(ymin = Lo, ymax = Hi), alpha = 0.15, colour = NA) +
     geom_line(linewidth = 1.1) +
@@ -592,56 +588,24 @@ create_stacked_fit_ct <- function(country, file_stub) {
          subtitle = "Line = posterior median; ribbon = 95% pointwise interval; vertical = lockdown date",
          x = "Date", y = "c(t)", colour = "Model", fill = "Model") +
     create_custom_theme(legend_position = "bottom")
-  
+
   p_stack <- (p_fit / p_ct) +
     plot_layout(heights = c(1, 1.05), guides = "collect") &
     theme(legend.position = "bottom")
-  
+
   ggsave(file.path(fig_dir, paste0(file_stub, "_",
                                    ifelse(country == "England", "EN", "SC"), ".png")),
          p_stack, width = 10, height = 9, dpi = 300)
   p_stack
 }
 
-p_EN_fit_ct <- create_stacked_fit_ct("England",  "stack_fit_ct")
-p_SC_fit_ct <- create_stacked_fit_ct("Scotland", "stack_fit_ct")
+p_EN_fit_ct <- plot_stacked_fit_ct("England",  "stack_fit_ct")
+p_SC_fit_ct <- plot_stacked_fit_ct("Scotland", "stack_fit_ct")
 print(p_EN_fit_ct); print(p_SC_fit_ct)
 
-# ============================================================
-# 9) Observed deaths, England scaled to Scotland
-# ============================================================
-z_df <- cbind.data.frame(
-  dates   = joint_data$england$dates,
-  deaths  = joint_data$england$deaths,
-  country = "england"
-) %>%
-  dplyr::mutate(
-    deaths = deaths * joint_data$scotland$population / joint_data$england$population
-  ) %>%
-  dplyr::bind_rows(
-    cbind.data.frame(
-      dates   = joint_data$scotland$dates,
-      deaths  = joint_data$scotland$deaths,
-      country = "scotland"
-    )
-  )
-
-E_S_d <- z_df %>%
-  ggplot(aes(x = dates, y = deaths, colour = country)) +
-  geom_point(size = 2.5) +
-  geom_smooth(data = dplyr::filter(z_df, dates >= as.Date("2020-03-14")),
-              se = FALSE, span = 0.25) +
-  labs(x = "Date", y = "Scaled deaths (England scaled to Scotland)",
-       title = "Observed deaths in the UK during the first wave of COVID-19") +
-  create_custom_theme()
-
-print(E_S_d)
-ggplot2::ggsave(file.path(fig_dir, "Eng_Sco_deaths.png"),
-                E_S_d, width = 10, height = 7, dpi = 300)
-
 
 # ============================================================
-# 12) Posterior summaries across all three models
+#  Posterior summaries across all three models
 # ============================================================
 posterior_tbl <- function(fit, model_label, pars) {
   avail <- fit@sim$pars_oi
@@ -651,9 +615,9 @@ posterior_tbl <- function(fit, model_label, pars) {
                           Median = numeric(), SD = numeric(),
                           Q2.5 = numeric(), Q97.5 = numeric()))
   }
-  
+
   sm <- rstan::summary(fit, pars = keep, probs = c(0.025, 0.5, 0.975))$summary
-  
+
   tibble::tibble(
     Model     = model_label,
     Parameter = rownames(sm),
@@ -688,3 +652,5 @@ post_summ_all <- dplyr::bind_rows(
 print(post_summ_all, n = Inf)
 write.csv(post_summ_all, file.path(res_dir, "posterior_summaries_3NPI.csv"), row.names = FALSE)
 saveRDS(post_summ_all, file.path(res_dir, "posterior_summaries_3NPI.rds"))
+
+      
