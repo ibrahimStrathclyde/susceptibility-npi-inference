@@ -448,27 +448,6 @@ saveRDS(
 
 
 
-# =========================================================
-# 5) LOO / WAIC
-# =========================================================
-ll_het <- loo::extract_log_lik(fit_het_lin_hier, parameter_name = "log_lik", merge_chains = FALSE)
-
-r_eff_het <- loo::relative_eff(ll_het)
-
-loo_het  <- loo::loo(ll_het, r_eff = r_eff_het)
-waic_het <- loo::waic(ll_het)
-
-cat("\n===== JOINT HIER LINEAR (HET): PSIS-LOO =====\n")
-print(loo_het)
-
-cat("\n===== JOINT HIER LINEAR (HET): WAIC =====\n")
-print(waic_het)
-
-cat("\n===== Pareto-k summary =====\n")
-print(summary(loo_het$diagnostics$pareto_k))
-
-# Save LOO object so compare_npi_specifications.R can build the LOOIC table
-saveRDS(loo_het, "outputs/stan_fits/loo_het_lin_hier.rds")
 
 
 
@@ -737,35 +716,9 @@ p_dens <- ggplot(post_dist, aes(x = Value)) +
 
 print(p_dens)
 
-# =========================================================
-# 11) Correlation heatmap : joint
-# =========================================================
-key_mat <- cbind(
-  R0_EN = R0_EN, R0_SC = R0_SC,
-  cstar_EN = cs_EN, cstar_SC = cs_SC,
-  w_EN = w_EN, w_SC = w_SC,
-  t0_EN = t0_EN, t0_SC = t0_SC,
-  I0_EN = I0_EN, I0_SC = I0_SC,
-  phi_EN = phi_EN_d, phi_SC = phi_SC_d
-)
-if (include_CV && !is.null(CV_draw)) key_mat <- cbind(key_mat, CV = CV_draw)
-
-cor_m <- cor(key_mat, use = "pairwise.complete.obs")
-cor_long <- expand.grid(Var1 = colnames(cor_m), Var2 = rownames(cor_m))
-cor_long$Correlation <- as.vector(cor_m)
-
-p_cor <- ggplot(cor_long, aes(x = Var1, y = Var2, fill = Correlation)) +
-  geom_tile() +
-  scale_fill_gradient2(midpoint = 0, limits = c(-1,1), name = "Corr") +
-  geom_text(aes(label = round(Correlation, 2)), size = 3.3, fontface="bold") +
-  labs(title = paste0("Posterior correlation ", model_label), x = "", y = "") +
-  create_custom_theme() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-print(p_cor)
 
 # =========================================================
-# 12) Incidence (EI flow): inc_EI = delta * E(t)
+#  Incidence (EI flow): inc_EI = delta * E(t)
 # =========================================================
 inc_EN <- post$inc_EI[,1,]
 inc_SC <- post$inc_EI[,2,]
@@ -839,41 +792,3 @@ p_ct <- ggplot(ct_sum, aes(x = Date)) +
   facet_wrap(~Country, scales = "free_y", ncol = 1)
 
 print(p_ct)
-
-# =========================================================
-# OPTIONAL: compute Ct outside Stan 
-# =========================================================
-fun_get_ct_linear <- function(post, stan_data) {
-  # returns array: draws x C x T
-  C <- stan_data$C
-  T <- stan_data$T
-  t1 <- stan_data$t1
-  
-  # use transformed parameters if available
-  w_draw  <- post$w          # draws x C
-  cs_draw <- post$cstar      # draws x C
-  t0_draw <- post$t0         # draws x C (already computed as t1-w in Stan)
-  
-  n_draws <- nrow(w_draw)
-  Ct <- array(NA_real_, dim = c(n_draws, C, T))
-  
-  for (c in 1:C) {
-    t1c <- t1[c]
-    for (t in 1:T) {
-      Ct[,c,t] <- ifelse(
-        t < t0_draw[,c], 1.0,
-        ifelse(
-          t < t1c,
-          1.0 - (1.0 - cs_draw[,c]) * pmin(pmax((t - t0_draw[,c]) / pmax(t1c - t0_draw[,c], 1e-6), 0.0), 1.0),
-          cs_draw[,c]
-        )
-      )
-    }
-  }
-  Ct
-}
-
-# Example:
-# Ct2 <- fun_get_ct_linear(post, stan_data_common)
-# all.equal(Ct2[1:10,,], post$ct[1:10,,], tolerance = 1e-6)
-
