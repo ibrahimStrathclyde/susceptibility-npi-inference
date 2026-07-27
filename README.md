@@ -107,25 +107,6 @@ susceptibility-npi-inference/
     `- stan_fits/                      # Stan fit objects (.rds) and compiled models
 ```
 
----
-
-## Chapter mapping
-
-**Chapter numbering** follows the revised (post-viva correction) thesis.
-
-| Submitted | Revised | Content |
-|-----------|---------|---------|
-| 1, 2 | 1 | Background, review, and modelling framework |
-| 3 | 2 | Single-epidemic identifiability |
-| 4 | 3 | Joint two-epidemic inference |
-| 5 | 4 | Discretisation methods (LA-SM) |
-| 6 | 5 | Distributional misspecification |
-| 7 | 6 | England and Scotland application |
-| 8 | 7 | General conclusions |
-
-No code folder is provided for Chapters 1, 4, or 7. Chapter 1 is theoretical.
-Chapter 4 (discretisation) is fully implemented inside
-`R/Generalfun_mispec_distribution.R`. Chapter 7 contains no new computation.
 
 
 `chapter02_single_epidemic_identifiability/`. Appendix C holds
