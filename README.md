@@ -325,16 +325,16 @@ cite the original sources if you use the data independently.
 | `R/utility_functions.R` | Complete |
 | `R/mle_functions.R` | Complete |
 | `R/Generalfun_mispec_distribution.R` | Complete |
-| `chapter02/01_baseline_cases.R` (S3, S4) | Complete |
-| `chapter02/Fitting_stochastic_tau_leap_reducedm.R` | Complete |
+| `chapter02/01_baseline_cases.R` (S3, S4) | To be uploaded |
+| `chapter02/Fitting_stochastic_tau_leap_reducedm.R` | To be uploaded|
 | `chapter02/HELPERS_TAU_SIM.R` | Complete |
-| `chapter03/02_mle_single_epidemic.R` | Complete |
-| `chapter03/03_mle_two_epidemics.R` | Complete |
-| `appendixC/04_single_epidemic_correlation.R` | Complete |
-| `appendixC/05_two_epidemics_correlation.R` | Complete |
-| `appendixC/06_correlation_npi_comparison.R` | Complete |
-| `chapter05/single_epidemic_misspec.R` | Complete |
-| `chapter05/two_epidemics_misspec.R` | Complete |
+| `chapter03/02_mle_single_epidemic.R` | To be uploaded|
+| `chapter03/03_mle_two_epidemics.R` | To be uploaded |
+| `appendixC/04_single_epidemic_correlation.R` | To be uploaded |
+| `appendixC/05_two_epidemics_correlation.R` | To be uploaded|
+| `appendixC/06_correlation_npi_comparison.R` | To be uploaded |
+| `chapter05/single_epidemic_misspec.R` | To be uploaded|
+| `chapter05/two_epidemics_misspec.R` |To be uploaded |
 | `chapter06/data/GB_data.csv` | Complete |
 | `chapter06/linear_npi_fit.R` (hierarchical) | Complete |
 | `chapter06/logistic_npi_fit.R` (hierarchical) | Complete |
